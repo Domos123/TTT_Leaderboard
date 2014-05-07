@@ -1,0 +1,11 @@
+"AddonInfo"
+{
+	"name"			"TTT Leaderboard"
+	"version"		"0.1"
+	"up_date"		"2014-07-05"
+	"author_name"		"Domos"
+	"author_email"		"dombrady1993@gmail.com"
+	"author_url"		"http://domos.me.uk"
+	"info"			"Leaderboard for TTT"
+	"override"		"0"
+}
