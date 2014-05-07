@@ -84,6 +84,7 @@ function SaveStats ( ply )
 	wins = ply:GetNWInt("wins")
 	losses = ply:GetNWInt("losses")
 	sql.Query("UPDATE player_info SET innocentkills = "..innocentkills..", detectivekills = "..detectivekills..", traitorkills = "..traitorkills..", rdm = "..rdm..", wins = "..wins..", losses = "..losses.." WHERE unique_id = '"..unique_id.."'")
+	CalculateScore()
 end
 
 function GiveWinOrLoss ( result )
@@ -128,4 +129,3 @@ hook.Add( "PlayerInitialSpawn", "PlayerInitialSpawn", PlayerInitialSpawn )
 hook.Add( "Initialize", "Initialize", Initialize )
 hook.Add( "PlayerDeath", "HandleDeath", HandleDeath( victim, inflictor, attacker ) )
 hook.Add( "TTTEndRound", "EndOfRound", GiveWinOrLoss( result ) )
-hook.Add( "LeaderboardUpdate", "LeaderboardUpdate", UpdateScore )
