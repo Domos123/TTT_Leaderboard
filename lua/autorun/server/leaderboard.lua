@@ -4,8 +4,23 @@ function Initialize ()
 	CreateTable()
 end
 
-function CalculateScore ( ply )
-	
+function CalculateScore ()
+	for k, v in pairs(player.GetAll()) do
+		innocentkills = v:GetNWInt("innocentkills")
+		detectivekills = v:GetNWInt("detectivekills")
+		traitorkills = v:GetNWInt("traitorkills")
+		rdm = v:GetNWInt("rdm")
+		wins = v:GetNWInt("wins")
+		losses = v:GetNWInt("losses")
+		
+		if (wins > 0) then
+			score = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins / losses))
+		else
+			score = 0
+		end
+		
+		v:SetNWInt("score", score)
+	end
 end
 
 function CreateTable ()
@@ -36,7 +51,7 @@ end
 
 function NewPlayer ( SteamID, ply )
 	steamID = SteamID
-	sql.Query( "INSERT INTO player_info (`unique_id`, `innocentkills`, `detectivekills`, `traitorkills`, `rdm`, `wins`, `losses`)VALUES ('"..steamID.."', '0', '0', '0', '0', '0', '0')" )
+	sql.Query( "INSERT INTO player_info (`unique_id`, `innocentkills`, `detectivekills`, `traitorkills`, `rdm`, `wins`, `losses`) VALUES ('"..steamID.."', '0', '0', '0', '0', '0', '0')" )
 	result = sql.Query( "SELECT unique_id, innocentkills, detectivekills, traitorkills, rdm, wins, losses FROM player_info WHERE unique_id = '"..steamID.."'" )
 	if (result) then
 		sql_value_stats( ply )
@@ -113,3 +128,4 @@ hook.Add( "PlayerInitialSpawn", "PlayerInitialSpawn", PlayerInitialSpawn )
 hook.Add( "Initialize", "Initialize", Initialize )
 hook.Add( "PlayerDeath", "HandleDeath", HandleDeath( victim, inflictor, attacker ) )
 hook.Add( "TTTEndRound", "EndOfRound", GiveWinOrLoss( result ) )
+hook.Add( "LeaderboardUpdate", "LeaderboardUpdate", UpdateScore )
