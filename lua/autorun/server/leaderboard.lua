@@ -88,7 +88,28 @@ function GiveWinOrLoss ( result )
 		end
 	end
 end
+
+function HandleDeath ( victim, inflictor, attacker )
+	if attacker:IsPlayer() and attacker != victim then
+		if attacker:IsTraitor() then
+			if victim:IsTraitor() then
+				attacker:SetNWInt("rdm", attacker:GetNWInt("rdm") + 1)
+			elseif victim:IsDetective() then
+				attacker:SetNWInt("detectivekills", attacker:GetNWInt("detectivekills") + 1)
+			else
+				attacker:SetNWInt("innocentkills", attacker:GetNWInt("innocentkills") + 1)
+			end
+		else
+			if victim:IsTraitor() then
+				attacker:SetNWInt("traitorkills", attacker:GetNWInt("traitorkills") + 1)
+			else
+				attacker:SetNWInt("rdm", attacker:GetNWInt("rdm") + 1)
+			end
+		end
+	end
+end
  
 hook.Add( "PlayerInitialSpawn", "PlayerInitialSpawn", PlayerInitialSpawn )
 hook.Add( "Initialize", "Initialize", Initialize )
+hook.Add( "PlayerDeath", "HandleDeath", HandleDeath( victim, inflictor, attacker ) )
 hook.Add( "TTTEndRound", "EndOfRound", GiveWinOrLoss( result ) )
