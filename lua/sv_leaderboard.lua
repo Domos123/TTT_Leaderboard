@@ -96,7 +96,7 @@ function HandleDeath ( victim, inflictor, attacker )
 end
 
 MsgAll( "Loaded Leaderboard Server Addon\n" ) 
-hook.Add( "PlayerInitialSpawn", "LoadPlayerData", LoadData )
-hook.Add( "PlayerDisconnected", "SavePlayerData", SaveData )
-hook.Add( "PlayerDeath", "HandleDeath", HandleDeath( victim, inflictor, attacker ) )
-hook.Add( "TTTEndRound", "EndOfRound", GiveWinOrLoss( result ) )
+hook.Add( "PlayerAuthed", "TTTLB LoadPlayerData", function() LoadData(); return nil; end )
+hook.Add( "PlayerDisconnected", "TTTLB SavePlayerData", function() SaveData(); return nil; end )
+hook.Add( "PlayerDeath", "TTTLB HandleDeath", function() HandleDeath( victim, inflictor, attacker ); return nil; end )
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GiveWinOrLoss( result ); return nil; end )
