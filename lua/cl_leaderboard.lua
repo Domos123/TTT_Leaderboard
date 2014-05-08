@@ -28,21 +28,28 @@
 	-- playerList:AddLine(v:Nick(),v:GetNWInt("innocentkills"),v:GetNWInt("detectivekills"),v:GetNWInt("traitorkills"),v:GetNWInt("rdm"),v:GetNWInt("wins"),v:GetNWInt("losses"),v:GetNWInt("score"))
 -- end
 
-concommand.Add( "Leaderboard", function() 
-		local ply = LocalPlayer()
-		hook.Run("UpdateLeaderboard", ply)
-		chat.AddText( ply:GetNWInt("innocentkills") )
-		chat.AddText( ply:GetNWInt("detectivekills") )
-		chat.AddText( ply:GetNWInt("traitorkills") )
-		chat.AddText( ply:GetNWInt("rdm") )
-		chat.AddText( ply:GetNWInt("wins") )
-		chat.AddText( ply:GetNWInt("losses") )
-		chat.AddText( ply:GetNWInt("wins") )
-		chat.AddText( ply:GetNWInt("score") )
-		end )
+--concommand.Add( "Leaderboard", function() 
+	--local ply = LocalPlayer()
+	--plyTable = hook.Call( "UpdateTTTLeaderboard" )
+	--PrintTable( plyTable )
+--end )
+	
+--timer.Create( "UpdateLeaderboard" , 10 , function()
+	--net.Recieve( "LBData", function( len )
+		--plyData = net.ReadTable()
+		--for k,ply in pairs( plyData ) do
+			
+		--end
+	--end)
+--end)
 
 -- hook.Add( "PlayerSay", 0, function ( ply, text, team )
     -- if ( text == "!leaderboard" ) then
         -- leaderBoard:MakePopup()) 
     -- end
 -- end )
+
+concommand.Add( "Leaderboard", function()
+ply = LocalPlayer()
+chat.AddText( ply:GetNWInt("innocentkills") ..",".. ply:GetNWInt("detectivekills") ..",".. ply:GetNWInt("traitorkills") ..",".. ply:GetNWInt("rdm") ..",".. ply:GetNWInt("wins") ..",".. ply:GetNWInt("losses") ..",".. ply:GetNWInt("score") )
+end)

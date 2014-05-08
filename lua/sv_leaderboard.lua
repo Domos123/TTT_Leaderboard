@@ -1,27 +1,38 @@
 
 function LoadData( ply )
-	if ( file.Exists( "lb_data/" .. ply:UniqueID() .. ".csv" , "DATA" )) then
-		print( "Loading Data for " .. ply:Nick() )
-		local Data = string.Explode(",",file.Read( "lb_data/" .. ply:UniqueID() .. ".csv" , "DATA" ));
-		ply:SetNWInt( "innocentkills",data[1] )
-		ply:SetNWInt( "detectivekills",data[2] )
-		ply:SetNWInt( "traitorkills",data[3] )
-		ply:SetNWInt( "rdm",data[4] )
-		ply:SetNWInt( "wins",data[5] )
-		ply:SetNWInt( "losses",data[6] )
-		ply:SetNWInt( "score",data[7] )
+	MsgAll( "Handling join for " .. ply:UniqueID() )
+	local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "r" , "DATA" )
+	if ( f ) then
+		MsgAll( "Loading Data for " .. ply:Nick() )
+		local Data = string.Explode( "," , f:ReadString( f:Size() ) )
+		f:Close()
+		ply:SetNWInt( "innocentkills" , data[1] )
+		ply:SetNWInt( "detectivekills" , data[2] )
+		ply:SetNWInt( "traitorkills" , data[3] )
+		ply:SetNWInt( "rdm" , data[4] )
+		ply:SetNWInt( "wins" , data[5] )
+		ply:SetNWInt( "losses" , data[6] )
+		ply:SetNWInt( "score" , data[7] )
 	else
-		print( "Creating Data for " .. ply:Nick() )
-		file.Write( "lb_data/" .. ply:UniqueID() .. ".csv" , "0,0,0,0,0,0,0" )
-		LoadData( ply )
+		MsgAll( "Creating Data for " .. ply:Nick() )
+		local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "w" , "DATA" )
+		f:Write( "0,0,0,0,0,0,0" )
+		f:Close()
+		ply:SetNWInt( "detectivekills" , 0 )
+		ply:SetNWInt( "traitorkills" , 0 )
+		ply:SetNWInt( "rdm" , 0 )
+		ply:SetNWInt( "wins" , 0 )
+		ply:SetNWInt( "losses" , 0 )
+		ply:SetNWInt( "score" , 0 )
 	end
 end
 
 function SaveData( ply )
-	print( "Saving Data for " .. ply:Nick() )
-	local filename = "lb_data/" .. ply:UniqueID() .. ".csv"
+	MsgAll( "Saving Data for " .. ply:Nick() )
 	local data = ply:GetNWInt("innocentkills") ..",".. ply:GetNWInt("detectivekills") ..",".. ply:GetNWInt("traitorkills") ..",".. ply:GetNWInt("rdm") ..",".. ply:GetNWInt("wins") ..",".. ply:GetNWInt("losses") ..",".. ply:GetNWInt("score")
-	file.Write( filename, data )
+	local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "w" , "DATA" )
+	f:Write( data )
+	f:Close()
 end
 
 function CalculateScore ()
@@ -47,13 +58,13 @@ function GiveWinOrLoss ( result )
 		if v:IsTraitor() then
 			if result == WIN_INNOCENT then
 				v:SetNWInt("losses", v:GetNWInt("losses") + 1)
-			else
+			elseif result == WIN_TRAITOR then
 				v:SetNWInt("wins", v:GetNWInt("wins") + 1)
 			end
 		else
 			if result == WIN_INNOCENT then
 				v:SetNWInt("wins", v:GetNWInt("wins") + 1)
-			else
+			elseif result == WIN_TRAITOR then
 				v:SetNWInt("losses", v:GetNWInt("losses") + 1)
 			end
 		end
@@ -83,9 +94,9 @@ function HandleDeath ( victim, inflictor, attacker )
 		end
 	end
 end
- 
+
+MsgAll( "Loaded Leaderboard Server Addon\n" ) 
 hook.Add( "PlayerInitialSpawn", "LoadPlayerData", LoadData )
 hook.Add( "PlayerDisconnected", "SavePlayerData", SaveData )
 hook.Add( "PlayerDeath", "HandleDeath", HandleDeath( victim, inflictor, attacker ) )
 hook.Add( "TTTEndRound", "EndOfRound", GiveWinOrLoss( result ) )
-hook.Add( "UpdateLeaderboard", "UpdateLeaderboard", CalculateScore )

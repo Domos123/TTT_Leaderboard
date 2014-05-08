@@ -1,6 +1,9 @@
+print( "Loaded Leaderboard v0.1" )
 if SERVER then
-      AddCSLuaFile("cl_leaderboard.lua")
-	  include("sv_leaderboard.lua")
+	print( "Serverside code running" )
+	AddCSLuaFile("cl_leaderboard.lua")
+	include("sv_leaderboard.lua")
 else
-      include("cl_leaderboard.lua")
+	print( "Clientside Code Running" )
+	include("cl_leaderboard.lua")
 end
