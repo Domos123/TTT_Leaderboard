@@ -29,8 +29,8 @@
 -- end
 
 concommand.Add( "Leaderboard", function() 
-		hook.Run("UpdateLeaderboard")
 		local ply = LocalPlayer()
+		hook.Run("UpdateLeaderboard", ply)
 		chat.AddText( ply:GetNWInt("innocentkills") )
 		chat.AddText( ply:GetNWInt("detectivekills") )
 		chat.AddText( ply:GetNWInt("traitorkills") )
