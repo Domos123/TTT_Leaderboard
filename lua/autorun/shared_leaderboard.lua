@@ -7,7 +7,7 @@ else
 	include("cl_leaderboard.lua")
 end
 
-concommand.Add( "TTTLB", function( ply, cmd, args )
+function DoLeaderboard( ply )
 
 	if SERVER then
 		SendData( ply )
@@ -16,4 +16,12 @@ concommand.Add( "TTTLB", function( ply, cmd, args )
 		DrawLeaderboard()
 	end
 
+end 
+
+concommand.Add( "TTTLB", function( ply, cmd, args )	DoLeaderboard( ply ); end )
+
+hook.Add( "PlayerSay", "TTTLB ChatCommand", function( ply, txt, public )
+	if ( string.sub( text, 1, 6 ) == "!TTTLB") then
+         DoLeaderboard( ply )
+    end
 end )
