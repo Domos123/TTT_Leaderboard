@@ -1,102 +1,118 @@
 
+function FileName( ply )
+	return ("lb_data/" .. ply:UniqueID() .. ".txt")
+end
+
 function LoadData( ply )
-	MsgAll( "Handling join for " .. ply:UniqueID() )
-	local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "r" , "DATA" )
-	if ( f ) then
-		MsgAll( "Loading Data for " .. ply:Nick() )
-		local Data = string.Explode( "," , f:ReadString( f:Size() ) )
-		f:Close()
-		ply:SetNWInt( "innocentkills" , data[1] )
-		ply:SetNWInt( "detectivekills" , data[2] )
-		ply:SetNWInt( "traitorkills" , data[3] )
-		ply:SetNWInt( "rdm" , data[4] )
-		ply:SetNWInt( "wins" , data[5] )
-		ply:SetNWInt( "losses" , data[6] )
-		ply:SetNWInt( "score" , data[7] )
+	if (not file.IsDir("lb_data", "DATA" )) then
+		file.CreateDir("lb_data")
+	end
+	if file.Exists( FileName( ply ), "DATA"  ) and ( file.Size( FileName( ply ), "DATA"  ) > 1 ) then
+		return string.Explode( "," , file.Read( FileName( ply ), "DATA"  ) )
 	else
-		MsgAll( "Creating Data for " .. ply:Nick() )
-		local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "w" , "DATA" )
-		f:Write( "0,0,0,0,0,0,0" )
-		f:Close()
-		ply:SetNWInt( "detectivekills" , 0 )
-		ply:SetNWInt( "traitorkills" , 0 )
-		ply:SetNWInt( "rdm" , 0 )
-		ply:SetNWInt( "wins" , 0 )
-		ply:SetNWInt( "losses" , 0 )
-		ply:SetNWInt( "score" , 0 )
+		file.Write( FileName( ply ), "0,0,0,0,0,0,0" )
+		return {0,0,0,0,0,0,0}
 	end
 end
 
-function SaveData( ply )
-	MsgAll( "Saving Data for " .. ply:Nick() )
-	local data = ply:GetNWInt("innocentkills") ..",".. ply:GetNWInt("detectivekills") ..",".. ply:GetNWInt("traitorkills") ..",".. ply:GetNWInt("rdm") ..",".. ply:GetNWInt("wins") ..",".. ply:GetNWInt("losses") ..",".. ply:GetNWInt("score")
-	local f = file.Open( "lb_data/" .. ply:UniqueID() .. ".txt" , "w" , "DATA" )
-	f:Write( data )
-	f:Close()
+function SaveData( ply, data )
+	if (not file.IsDir("lb_data", "DATA" )) then
+		file.CreateDir("lb_data")
+	end
+	local datastr = data[1] .. "," .. data[2] .. "," .. data[3] .. "," .. data[4] .. "," .. data[5] .. "," .. data[6] .. "," .. data[7]
+	file.Write( FileName( ply ), datastr )
 end
 
-function CalculateScore ()
-	for k, v in pairs(player.GetAll()) do
-		innocentkills = v:GetNWInt("innocentkills") + 0
-		detectivekills = v:GetNWInt("detectivekills") + 0
-		traitorkills = v:GetNWInt("traitorkills") + 0
-		rdm = v:GetNWInt("rdm") + 0
-		wins = v:GetNWInt("wins") + 0
-		losses = v:GetNWInt("losses") + 0
-		
-		if (losses > 0) then
-			score = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins / losses)) + 0
-		else
-			score = 0
-		end
-		v:SetNWInt("score", score)
+function CalculateScore ( ply, data )
+	innocentkills = data[1] + 0
+	detectivekills = data[2] + 0
+	traitorkills = data[3] + 0
+	rdm = data[4] + 0
+	wins = data[5] + 0
+	losses = data[6] + 0
+	if (losses > 0) then
+		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins / losses)) + 0
+	else
+		data[7] = 0
 	end
+	return data
 end
 
 function GiveWinOrLoss ( result )
+	MsgAll("Giving Candy")
 	for k, v in pairs(player.GetAll()) do
+		data = LoadData( v )
 		if v:IsTraitor() then
+			MsgAll(v:Nick() .. " is traitor")
 			if result == WIN_INNOCENT then
-				v:SetNWInt("losses", v:GetNWInt("losses") + 1)
+				data[6] = data[6] + 1
 			elseif result == WIN_TRAITOR then
-				v:SetNWInt("wins", v:GetNWInt("wins") + 1)
+				data[5] = data[5] + 1
+			end
+		elseif !v:IsSpec() then
+			MsgAll(v:Nick() .. " is not traitor")
+			if result == WIN_INNOCENT then
+				data[5] = data[5] + 1
+			elseif result == WIN_TRAITOR then
+				data[6] = data[6] + 1
 			end
 		else
-			if result == WIN_INNOCENT then
-				v:SetNWInt("wins", v:GetNWInt("wins") + 1)
-			elseif result == WIN_TRAITOR then
-				v:SetNWInt("losses", v:GetNWInt("losses") + 1)
-			end
+			MsgAll(v:Nick() .. " is spec")
 		end
-		SaveData( v )
+		data = CalculateScore( v, data )
+		SaveData( v, data )
 	end
 end
 
 function HandleDeath ( victim, inflictor, attacker )
-	if attacker then
-		if attacker:IsPlayer() and attacker != victim then
+	if !IsValid(attacker) then
+		return nil
+	end
+	if GAMEMODE.round_state != ROUND_ACTIVE then
+		return nil
+	end
+	if attacker:IsPlayer() then
+		if attacker != victim then
+			data = LoadData( attacker )
 			if attacker:IsTraitor() then
 				if victim:IsTraitor() then
-					attacker:SetNWInt("rdm", attacker:GetNWInt("rdm") + 1)
+					data[4] = data[4] + 1
 				elseif victim:IsDetective() then
-					attacker:SetNWInt("detectivekills", attacker:GetNWInt("detectivekills") + 1)
+					data[2] = data[2] + 1
 				else
-					attacker:SetNWInt("innocentkills", attacker:GetNWInt("innocentkills") + 1)
+					data[1] = data[1] + 1
 				end
 			else
 				if victim:IsTraitor() then
-					attacker:SetNWInt("traitorkills", attacker:GetNWInt("traitorkills") + 1)
+					data[3] = data[3] + 1
 				else
-					attacker:SetNWInt("rdm", attacker:GetNWInt("rdm") + 1)
+					data[4] = data[4] + 1
 				end
 			end
-			SaveData( attacker )
+			data = CalculateScore( attacker, data )
+			SaveData( attacker, data )
 		end
 	end
+	return nil
 end
 
-MsgAll( "Loaded Leaderboard Server Addon\n" ) 
-hook.Add( "PlayerAuthed", "TTTLB LoadPlayerData", function() LoadData(); return nil; end )
-hook.Add( "PlayerDisconnected", "TTTLB SavePlayerData", function() SaveData(); return nil; end )
-hook.Add( "PlayerDeath", "TTTLB HandleDeath", function() HandleDeath( victim, inflictor, attacker ); return nil; end )
-hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GiveWinOrLoss( result ); return nil; end )
+function SendDataToAll()
+	--MsgAll( "Sending Data to Clients" )
+	netdata = {}
+	for k, ply in pairs( player.GetAll() ) do
+		thisplayer = LoadData( ply )
+		thisplayer[8] = ply:Nick()
+		table.insert( netdata, thisplayer )
+	end
+	
+	net.Start( "TTTLBData" )
+		net.WriteTable( netdata )
+	net.Broadcast()
+end
+
+util.AddNetworkString( "TTTLBData" )
+
+MsgAll( "Loaded Leaderboard Server Addon\n" )
+
+hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath)
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GiveWinOrLoss( result ); SendDataToAll(); return nil; end )
