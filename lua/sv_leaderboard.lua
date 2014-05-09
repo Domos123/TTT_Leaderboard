@@ -33,31 +33,27 @@ function CalculateScore ( ply, data )
 	if (losses > 0) then
 		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins / losses)) + 0
 	else
-		data[7] = 0
+		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins * 1.5)) + 0
 	end
 	return data
 end
 
 function GiveWinOrLoss ( result )
-	MsgAll("Giving Candy")
 	for k, v in pairs(player.GetAll()) do
 		data = LoadData( v )
 		if v:IsTraitor() then
-			MsgAll(v:Nick() .. " is traitor")
 			if result == WIN_INNOCENT then
 				data[6] = data[6] + 1
 			elseif result == WIN_TRAITOR then
 				data[5] = data[5] + 1
 			end
 		elseif !v:IsSpec() then
-			MsgAll(v:Nick() .. " is not traitor")
 			if result == WIN_INNOCENT then
 				data[5] = data[5] + 1
 			elseif result == WIN_TRAITOR then
 				data[6] = data[6] + 1
 			end
 		else
-			MsgAll(v:Nick() .. " is spec")
 		end
 		data = CalculateScore( v, data )
 		SaveData( v, data )
@@ -115,4 +111,4 @@ util.AddNetworkString( "TTTLBData" )
 MsgAll( "Loaded Leaderboard Server Addon\n" )
 
 hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath)
-hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GiveWinOrLoss( result ); SendDataToAll(); return nil; end )
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); SendDataToAll(); return nil; end )

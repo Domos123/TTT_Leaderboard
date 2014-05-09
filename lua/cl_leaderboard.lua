@@ -24,11 +24,12 @@ function DrawLeaderboard()
 	PlayerList:AddColumn( "Wins" )
 	PlayerList:AddColumn( "Losses" )
 	PlayerList:AddColumn( "Score" )
-	PlayerList:SortByColumn( 8 )
 	
 	for k, ply in pairs(data) do
 		PlayerList:AddLine(ply[8],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[7])
 	end
+	
+	PlayerList:SortByColumn( 8,true )
 	
 	LBPanel:MakePopup()
 end
