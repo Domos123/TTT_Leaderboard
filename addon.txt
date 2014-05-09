@@ -1,7 +1,7 @@
 "AddonInfo"
 {
 	"name"			"TTT Leaderboard"
-	"version"		"0.1"
+	"version"		"0.2"
 	"up_date"		"2014-07-05"
 	"author_name"		"Domos"
 	"author_email"		"dombrady1993@gmail.com"

@@ -1,4 +1,6 @@
 
+local datacache = {}
+
 function FileName( ply )
 	return ("lb_data/" .. ply:UniqueID() .. ".txt")
 end
@@ -31,9 +33,9 @@ function CalculateScore ( ply, data )
 	wins = data[5] + 0
 	losses = data[6] + 0
 	if (losses > 0) then
-		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins / losses)) + 0
+		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins + 0.1 / losses)) + 0
 	else
-		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins * 1.5)) + 0
+		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins + 0.1 * 1.5)) + 0
 	end
 	return data
 end
@@ -92,23 +94,29 @@ function HandleDeath ( victim, inflictor, attacker )
 	return nil
 end
 
-function SendDataToAll()
-	--MsgAll( "Sending Data to Clients" )
+function CacheData()
 	netdata = {}
 	for k, ply in pairs( player.GetAll() ) do
 		thisplayer = LoadData( ply )
 		thisplayer[8] = ply:Nick()
 		table.insert( netdata, thisplayer )
 	end
-	
+	cachedata = netdata
+end
+
+function SendDataToAll()
 	net.Start( "TTTLBData" )
-		net.WriteTable( netdata )
+		net.WriteTable( cachedata )
 	net.Broadcast()
+end
+
+function SendData( ply )	
+	net.Start( "TTTLBData" )
+		net.WriteTable( cachedata )
+	net.Send( ply )
 end
 
 util.AddNetworkString( "TTTLBData" )
 
-MsgAll( "Loaded Leaderboard Server Addon\n" )
-
 hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath)
-hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); SendDataToAll(); return nil; end )
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); CacheData(); SendDataToAll(); return nil; end )

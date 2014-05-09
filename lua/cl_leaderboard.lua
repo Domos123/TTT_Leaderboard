@@ -24,20 +24,21 @@ function DrawLeaderboard()
 	PlayerList:AddColumn( "Wins" )
 	PlayerList:AddColumn( "Losses" )
 	PlayerList:AddColumn( "Score" )
+	PlayerList.OnClickLine = function(parent,selected,isselected) parent:ClearSelection() end
+	
+	table.sort( data, function( a,b ) return (a[7] + 0) > (b[7] + 0) end )
 	
 	for k, ply in pairs(data) do
 		PlayerList:AddLine(ply[8],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[7])
 	end
 	
-	PlayerList:SortByColumn( 8,true )
-	
 	LBPanel:MakePopup()
 end
 
-concommand.Add( "TTTLB", DrawLeaderboard )
-
-timer.Create( "TTTLBDataSyncClient", 1, 0, function() 
+function GetDataFromServer()
 	net.Receive( "TTTLBData", function( len )
 		data = net.ReadTable()
 	end)
-end )
+end
+
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GetDataFromServer(); return nil; end )
