@@ -41,4 +41,27 @@ function GetDataFromServer()
 	end)
 end
 
-hook.Add( "TTTEndRound", "TTTLB EndOfRound", function() GetDataFromServer(); return nil; end )
+function DoLeaderboard( ply )
+		ply:ConCommand( "TTTLBUpdate" )
+		GetDataFromServer()
+		timer.Simple( 0.3, DrawLeaderboard )
+end 
+
+keypressed = false
+function CheckKeys()
+	if input.IsKeyDown( KEY_F9 ) and not keypressed then
+		keypressed = true
+		DoLeaderboard( LocalPlayer() )
+	elseif keypressed and not input.IsKeyDown( KEY_F9 ) then
+		keypressed = false
+	end
+end
+
+concommand.Add( "TTTLB", function( ply, cmd, args )	DoLeaderboard( ply ); end )
+
+hook.Add( "PlayerSay", "TTTLB ChatCommand", function( ply, txt, public )
+	if ( txt == "!TTTLB") then
+        ply:ConCommand( "TTTLB" )
+    end
+end )
+hook.Add("Think", "TTTLB Think", CheckKeys )

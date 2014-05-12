@@ -1,5 +1,5 @@
 
-local datacache = {}
+local cachedata = {}
 
 function FileName( ply )
 	return ("lb_data/" .. ply:UniqueID() .. ".txt")
@@ -104,19 +104,24 @@ function CacheData()
 	cachedata = netdata
 end
 
-function SendDataToAll()
-	net.Start( "TTTLBData" )
-		net.WriteTable( cachedata )
-	net.Broadcast()
-end
-
 function SendData( ply )	
 	net.Start( "TTTLBData" )
-		net.WriteTable( cachedata )
+		if next( cachedata ) == nil then
+			MsgAll( "Data is not cached yet" )
+		else
+			net.WriteTable( cachedata )
+		end
 	net.Send( ply )
 end
 
+function DoLeaderboard( ply )
+		MsgAll( "Updating " .. ply:Nick() )
+		SendData( ply )
+end 
+
 util.AddNetworkString( "TTTLBData" )
 
+concommand.Add( "TTTLBUpdate", function( ply, cmd, args )	DoLeaderboard( ply ); end )
+
 hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath)
-hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); CacheData(); SendDataToAll(); return nil; end )
+hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); CacheData(); return nil; end )
