@@ -5,6 +5,10 @@ function FileName( ply )
 	return ("lb_data/" .. ply:UniqueID() .. ".txt")
 end
 
+function TempFileName( ply )
+	return ("lb_data/" .. ply:UniqueID() .. "Temp.txt")
+end
+
 function LoadData( ply )
 	if (not file.IsDir("lb_data", "DATA" )) then
 		file.CreateDir("lb_data")
@@ -12,7 +16,7 @@ function LoadData( ply )
 	if file.Exists( FileName( ply ), "DATA"  ) and ( file.Size( FileName( ply ), "DATA"  ) > 1 ) then
 		return string.Explode( "," , file.Read( FileName( ply ), "DATA"  ) )
 	else
-		file.Write( FileName( ply ), "0,0,0,0,0,0,0" )
+		file.Write( FileName( ply ), "0,0,0,0,0,0,0,0" )
 		return {0,0,0,0,0,0,0}
 	end
 end
@@ -21,7 +25,7 @@ function SaveData( ply, data )
 	if (not file.IsDir("lb_data", "DATA" )) then
 		file.CreateDir("lb_data")
 	end
-	local datastr = data[1] .. "," .. data[2] .. "," .. data[3] .. "," .. data[4] .. "," .. data[5] .. "," .. data[6] .. "," .. data[7]
+	local datastr = data[1] .. "," .. data[2] .. "," .. data[3] .. "," .. data[4] .. "," .. data[5] .. "," .. data[6] .. "," .. data[7] .. "," .. ( data[8] or "0" )
 	file.Write( FileName( ply ), datastr )
 end
 
@@ -32,11 +36,12 @@ function CalculateScore ( ply, data )
 	rdm = data[4] + 0
 	wins = data[5] + 0
 	losses = data[6] + 0
-	if (losses > 0) then
-		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins + 0.1 / losses)) + 0
-	else
-		data[7] = ((innocentkills + (detectivekills * 1.1) + (traitorkills * 1.2) - (rdm * 1.1)) * (wins + 0.1 * 1.5)) + 0
+	if ( losses == 0 ) then
+		losses = 0.6
 	end
+	score = (innocentkills + detectivekills + traitorkills - (rdm * 1.5)) * (wins / losses)
+	score = math.floor(score * (10^2) + 0.5) / (10^2)
+	data[7] = score
 	return data
 end
 
@@ -97,8 +102,9 @@ end
 function CacheData()
 	netdata = {}
 	for k, ply in pairs( player.GetAll() ) do
+		DoLogout( ply )
 		thisplayer = LoadData( ply )
-		thisplayer[8] = ply:Nick()
+		thisplayer[9] = ply:Nick()
 		table.insert( netdata, thisplayer )
 	end
 	cachedata = netdata
@@ -115,13 +121,28 @@ function SendData( ply )
 end
 
 function DoLeaderboard( ply )
-		MsgAll( "Updating " .. ply:Nick() )
-		SendData( ply )
+	MsgAll( "Updating " .. ply:Nick() )
+	SendData( ply )
 end 
+
+function DoLogin( ply )
+	file.Write( TempFileName( ply ), CurTime() )
+end
+
+function DoLogout( ply )
+	logintime = file.Read( TempFileName( ply ), "DATA" )
+	timeelapsed = CurTime() - ( logintime or 0 )
+	data = LoadData( ply )
+	data[8] = data[8] + timeelapsed
+	SaveData( ply, data )
+	DoLogin( ply )
+end
 
 util.AddNetworkString( "TTTLBData" )
 
 concommand.Add( "TTTLBUpdate", function( ply, cmd, args )	DoLeaderboard( ply ); end )
 
-hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath)
+hook.Add( "PlayerAuthed", "TTTLB HandleLogin", function( ply, steamid, uniqueid ) DoLogin( ply ); return nil; end )
+hook.Add( "PlayerDisconnected", "TTTLB HandleLogout", function( ply ) DoLogout( ply ); return nil; end )
+hook.Add( "PlayerDeath", "TTTLB HandleDeath", HandleDeath )
 hook.Add( "TTTEndRound", "TTTLB EndOfRound", function( result ) GiveWinOrLoss( result ); CacheData(); return nil; end )

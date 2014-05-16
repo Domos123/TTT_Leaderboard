@@ -23,13 +23,15 @@ function DrawLeaderboard()
 	PlayerList:AddColumn( "Bad Kills" )
 	PlayerList:AddColumn( "Wins" )
 	PlayerList:AddColumn( "Losses" )
+	PlayerList:AddColumn( "Playtime" )
 	PlayerList:AddColumn( "Score" )
 	PlayerList.OnClickLine = function(parent,selected,isselected) parent:ClearSelection() end
 	
 	table.sort( data, function( a,b ) return (a[7] + 0) > (b[7] + 0) end )
 	
 	for k, ply in pairs(data) do
-		PlayerList:AddLine(ply[8],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[7])
+		ply[8] = FormatTime( ply[8] )
+		PlayerList:AddLine(ply[9],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[8],ply[7])
 	end
 	
 	LBPanel:MakePopup()
@@ -39,6 +41,20 @@ function GetDataFromServer()
 	net.Receive( "TTTLBData", function( len )
 		data = net.ReadTable()
 	end)
+end
+
+function FormatTime( thetime )
+	seconds = math.floor( thetime + 0.5 )
+	minutes = math.floor( ( seconds / 60 ) + 0.5 )
+	hours = math.floor( minutes / 60 )
+	minutes = math.floor( minutes - ( hours * 60 ) )
+	if ( string.len( hours ) == 1 ) then
+		hours = "0" .. hours
+	end
+	if ( string.len( minutes ) == 1 ) then
+		minutes = "0" .. minutes
+	end
+	return hours .. ":" .. minutes
 end
 
 function DoLeaderboard( ply )
@@ -62,6 +78,7 @@ concommand.Add( "TTTLB", function( ply, cmd, args )	DoLeaderboard( ply ); end )
 hook.Add( "PlayerSay", "TTTLB ChatCommand", function( ply, txt, public )
 	if ( txt == "!TTTLB") then
         ply:ConCommand( "TTTLB" )
+		timer.Simple( 0.2, DrawLeaderboard )
     end
 end )
 hook.Add("Think", "TTTLB Think", CheckKeys )
