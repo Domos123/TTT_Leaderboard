@@ -3,7 +3,7 @@ local dmdata = {}
 local data = {}
 
 function DrawLeaderboard()
-	if data[1] == nil or tttdata[1] == nil or dmdata[1] == nil then
+	if data[1] == nil or tttdata[1] == nil then
 		drawText( "Data Not Cached - Wait for End of Round", nil, nil, nil )
 		return
 	end
@@ -40,13 +40,29 @@ function DrawLeaderboard()
 	PlayerList:AddColumn( "Score" )
 	PlayerList.OnClickLine = function(parent,selected,isselected) parent:ClearSelection() end
 	
-	local DmPlayerList = vgui.Create( "DListView", Tabs )
-	DmPlayerList:SetMultiSelect( false )
-	DmPlayerList:AddColumn( "Name" )
-	DmPlayerList:AddColumn( "Kills" )
-	DmPlayerList:AddColumn( "Deaths" )
-	DmPlayerList:AddColumn( "Ratio" )
-	DmPlayerList.OnClickLine = function(parent,selected,isselected) parent:ClearSelection() end
+	table.sort( tttdata, function( a,b ) return (a[7] + 0) > (b[7] + 0) end )
+	for k, ply in pairs(tttdata) do
+		ply[8] = FormatTime( ply[8] )
+		PlayerList:AddLine(ply[9],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[8],ply[7])
+	end
+	Tabs:AddSheet( "Leaderboard", PlayerList, "icon16/medal_gold_2.png" )
+	
+	if (dmdata[1] !== nil) then
+		local DmPlayerList = vgui.Create( "DListView", Tabs )
+		DmPlayerList:SetMultiSelect( false )
+		DmPlayerList:AddColumn( "Name" )
+		DmPlayerList:AddColumn( "Kills" )
+		DmPlayerList:AddColumn( "Deaths" )
+		DmPlayerList:AddColumn( "Ratio" )
+		DmPlayerList.OnClickLine = function(parent,selected,isselected) parent:ClearSelection() end
+		
+		table.sort( dmdata, function( a,b ) return (a[3] + 0) > (b[3] + 0) end )
+		for k, ply in pairs(dmdata) do
+			ply[3] = math.floor((ply[3] * 1000) + 0.5) / 1000
+			DmPlayerList:AddLine(ply[4],ply[1],ply[2],ply[3])
+		end
+		Tabs:AddSheet( "Deathmatch", DmPlayerList, "icon16/star.png" )
+	end
 	
 	local DButton = vgui.Create( "DButton", LBPanel )
 	DButton:SetPos( wide - 37, 2 )
@@ -56,22 +72,6 @@ function DrawLeaderboard()
 		LBPanel:Remove()
 	end
 		
-	table.sort( tttdata, function( a,b ) return (a[7] + 0) > (b[7] + 0) end )
-	table.sort( dmdata, function( a,b ) return (a[3] + 0) > (b[3] + 0) end )
-	
-	for k, ply in pairs(tttdata) do
-		ply[8] = FormatTime( ply[8] )
-		PlayerList:AddLine(ply[9],ply[1],ply[2],ply[3],ply[4],ply[5],ply[6],ply[8],ply[7])
-	end
-	
-	for k, ply in pairs(dmdata) do
-		ply[3] = math.floor((ply[3] * 1000) + 0.5) / 1000
-		DmPlayerList:AddLine(ply[4],ply[1],ply[2],ply[3])
-	end
-	
-	Tabs:AddSheet( "Leaderboard", PlayerList, "icon16/medal_gold_2.png" )
-	Tabs:AddSheet( "Deathmatch", DmPlayerList, "icon16/star.png" )
-	
 	LBPanel:MakePopup()
 end
 

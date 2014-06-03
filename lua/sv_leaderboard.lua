@@ -1,5 +1,6 @@
 
 local cachedata = {}
+local deathmatchcompat = true -- change to false if spectator deathmatch is not installed
 
 function FileName( ply )
 	return ("lb_data/" .. ply:UniqueID() .. ".txt")
@@ -22,12 +23,15 @@ function LoadData( ply )
 	end
 end
 
+
 function LoadDmData( ply )
-	if file.Exists( DmFileName( ply ), "DATA"  ) and ( file.Size( DmFileName( ply ), "DATA"  ) > 1 ) then
-		return string.Explode( "," , file.Read( DmFileName( ply ), "DATA"  ) )
-	else
-		file.Write( DmFileName( ply ), "0,0" )
-		return {0,0}
+	if deathmatchcompat then
+		if file.Exists( DmFileName( ply ), "DATA"  ) and ( file.Size( DmFileName( ply ), "DATA"  ) > 1 ) then
+			return string.Explode( "," , file.Read( DmFileName( ply ), "DATA"  ) )
+		else
+			file.Write( DmFileName( ply ), "0,0" )
+			return {0,0}
+		end
 	end
 end
 
@@ -37,8 +41,10 @@ function SaveData( ply, data )
 end
 
 function SaveDmData( ply, data )
-	local datastr = data[1] .. "," .. data[2]
-	file.Write( DmFileName( ply ), datastr )
+	if deathmatchcompat then
+		local datastr = data[1] .. "," .. data[2]
+		file.Write( DmFileName( ply ), datastr )
+	end
 end
 
 function CalculateScore ( ply, data )
@@ -86,39 +92,63 @@ function HandleDeath ( victim, inflictor, attacker )
 	if GAMEMODE.round_state != ROUND_ACTIVE then
 		return nil
 	end
-	
-	if victim:IsGhost() then
-		data = LoadDmData( victim )
-		data[2] = data[2] + 1
-		SaveDmData( victim, data )
-	end
-	
-	if attacker:IsGhost() then
-		data = LoadDmData( attacker )
-		data[1] = data[1] + 1
-		SaveDmData( attacker, data )
+	if deathmatchcompat then
+		if victim:IsGhost() then
+			data = LoadDmData( victim )
+			data[2] = data[2] + 1
+			SaveDmData( victim, data )
+		end
+		
+		if attacker:IsGhost() then
+			data = LoadDmData( attacker )
+			data[1] = data[1] + 1
+			SaveDmData( attacker, data )
+		end
 	end
 	
 	if attacker:IsPlayer() then
-		if (attacker != victim) and not attacker:IsSpec() and not attacker:IsGhost() then
-			data = LoadData( attacker )
-			if attacker:IsTraitor() then
-				if victim:IsTraitor() then
-					data[4] = data[4] + 1
-				elseif victim:IsDetective() then
-					data[2] = data[2] + 1
+		if deathmatchcompat then
+			if (attacker != victim) and not attacker:IsSpec() and not attacker:IsGhost() then
+				data = LoadData( attacker )
+				if attacker:IsTraitor() then
+					if victim:IsTraitor() then
+						data[4] = data[4] + 1
+					elseif victim:IsDetective() then
+						data[2] = data[2] + 1
+					else
+						data[1] = data[1] + 1
+					end
 				else
-					data[1] = data[1] + 1
+					if victim:IsTraitor() then
+						data[3] = data[3] + 1
+					else
+						data[4] = data[4] + 1
+					end
 				end
-			else
-				if victim:IsTraitor() then
-					data[3] = data[3] + 1
-				else
-					data[4] = data[4] + 1
-				end
+				data = CalculateScore( attacker, data )
+				SaveData( attacker, data )
 			end
-			data = CalculateScore( attacker, data )
-			SaveData( attacker, data )
+		else
+			if (attacker != victim) and not attacker:IsSpec() then
+				data = LoadData( attacker )
+				if attacker:IsTraitor() then
+					if victim:IsTraitor() then
+						data[4] = data[4] + 1
+					elseif victim:IsDetective() then
+						data[2] = data[2] + 1
+					else
+						data[1] = data[1] + 1
+					end
+				else
+					if victim:IsTraitor() then
+						data[3] = data[3] + 1
+					else
+						data[4] = data[4] + 1
+					end
+				end
+				data = CalculateScore( attacker, data )
+				SaveData( attacker, data )
+			end
 		end
 	end
 	return nil
@@ -135,18 +165,20 @@ function CacheData()
 		table.insert( tttdata, thisplayer )
 	end
 	table.insert( alldata, tttdata )
-	for k, ply in pairs( player.GetAll() ) do
-		thisplayer = LoadDmData( ply )
-		if (thisplayer[2] + 0) < 1 then
-			thisplayer[3] = thisplayer[1] / 0.5
-		else
-			thisplayer[3] = thisplayer[1] / thisplayer[2]
+	if deathmatchcompat then
+		for k, ply in pairs( player.GetAll() ) do
+			thisplayer = LoadDmData( ply )
+			if (thisplayer[2] + 0) < 1 then
+				thisplayer[3] = thisplayer[1] / 0.5
+			else
+				thisplayer[3] = thisplayer[1] / thisplayer[2]
+			end
+			thisplayer[3] = math.floor((thisplayer[3] * 10) + 0.5) / 10
+			thisplayer[4] = ply:Nick()
+			table.insert( dmdata, thisplayer )
 		end
-		thisplayer[3] = math.floor((thisplayer[3] * 10) + 0.5) / 10
-		thisplayer[4] = ply:Nick()
-		table.insert( dmdata, thisplayer )
+		table.insert( alldata, dmdata )
 	end
-	table.insert( alldata, dmdata )
 	cachedata = alldata
 end
 
