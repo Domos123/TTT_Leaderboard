@@ -47,7 +47,8 @@ function DrawLeaderboard()
 	end
 	Tabs:AddSheet( "Leaderboard", PlayerList, "icon16/medal_gold_2.png" )
 	
-	if (dmdata[1] !== nil) then
+	if (dmdata[1] == nil) then
+	else
 		local DmPlayerList = vgui.Create( "DListView", Tabs )
 		DmPlayerList:SetMultiSelect( false )
 		DmPlayerList:AddColumn( "Name" )

@@ -1,5 +1,5 @@
 
-print( "Loaded Leaderboard v0.2" )
+print( "Loaded Leaderboard v1.1" )
 if SERVER then
 
 	if (not file.IsDir("lb_data", "DATA" )) then
