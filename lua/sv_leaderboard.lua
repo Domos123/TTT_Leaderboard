@@ -98,11 +98,12 @@ function HandleDeath ( victim, inflictor, attacker )
 			data[2] = data[2] + 1
 			SaveDmData( victim, data )
 		end
-		
-		if attacker:IsGhost() then
-			data = LoadDmData( attacker )
-			data[1] = data[1] + 1
-			SaveDmData( attacker, data )
+		if attacker:IsPlayer() then
+			if attacker:IsGhost() then
+				data = LoadDmData( attacker )
+				data[1] = data[1] + 1
+				SaveDmData( attacker, data )
+			end
 		end
 	end
 	
